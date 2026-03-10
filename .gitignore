@@ -1,0 +1,26 @@
+# Environment variables — NEVER commit real secrets
+.env
+.env.local
+.env.*.local
+
+# SQLite database — contains OAuth tokens and user data
+*.db
+*.db-journal
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+server/dist/
+client/dist/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
