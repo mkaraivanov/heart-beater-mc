@@ -9,6 +9,24 @@
             "command": ".claude/hooks/pre-commit.sh"
           }
         ]
+      },
+      {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$FILE\" | grep -qE '(^|/)\\.env(\\.local)?$'; then echo 'Blocked: .env contains secrets — read from process.env only' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$FILE\" | grep -qE '\\.db(-journal)?$'; then echo 'Blocked: never modify SQLite files directly' >&2; exit 2; fi"
+          }
+        ]
       }
     ],
     "PostToolUse": [
