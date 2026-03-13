@@ -26,12 +26,16 @@ class HeartBeaterView extends WatchUi.DataField {
     // Timer that fires the POST every POST_INTERVAL_MS
     private var _postTimer   as Timer.Timer;
 
+    // Retry timer — stored as instance var to prevent garbage collection before it fires
+    private var _retryTimer  as Timer.Timer or Null;
+
     // Payload saved for retry attempts
     private var _pendingHr     as Number  = 0;
     private var _pendingActive as Boolean = false;
 
     function initialize() {
         DataField.initialize();
+        _retryTimer = null;
         _postTimer = new Timer.Timer();
         _postTimer.start(method(:onTimerTick), POST_INTERVAL_MS, true);
     }
@@ -98,6 +102,7 @@ class HeartBeaterView extends WatchUi.DataField {
     function onResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
         if (responseCode == 200) {
             _retryCount = 0;
+            _retryTimer = null;
             System.println("HeartBeater: POST ok");
         } else {
             System.println("HeartBeater: POST failed code=" + responseCode.toString());
@@ -105,16 +110,20 @@ class HeartBeaterView extends WatchUi.DataField {
             if (_retryCount < _retryDelays.size()) {
                 var delay = _retryDelays[_retryCount] as Number;
                 _retryCount++;
-                var retryTimer = new Timer.Timer();
-                retryTimer.start(method(:retryPost), delay, false);
+                // Store as instance var to prevent GC from collecting the timer before it fires
+                _retryTimer = new Timer.Timer();
+                _retryTimer.start(method(:retryPost), delay, false);
+                System.println("HeartBeater: backoff retry " + _retryCount.toString() + " in " + delay.toString() + "ms");
             } else {
                 System.println("HeartBeater: max retries reached, dropping payload");
                 _retryCount = 0;
+                _retryTimer = null;
             }
         }
     }
 
     function retryPost() as Void {
+        _retryTimer = null;
         System.println("HeartBeater: retrying POST (attempt " + _retryCount.toString() + ")");
         doPost(_pendingHr, _pendingActive);
     }
