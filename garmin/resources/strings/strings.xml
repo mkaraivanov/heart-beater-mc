@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!--
+  Heart Beater MC — String resources
+  All user-visible strings live here to support future localisation.
+-->
+<strings>
+  <string id="AppName">Heart Beater MC</string>
+</strings>
