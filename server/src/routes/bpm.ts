@@ -13,6 +13,7 @@ import type { Request, Response } from 'express';
 import { state } from '../state';
 import { broadcast } from '../sse/broadcaster';
 import { evaluateThreshold } from '../thresholdEngine';
+import { resetWatchdog, clearWatchdog } from '../sessionWatchdog';
 
 const router = Router();
 
@@ -42,6 +43,8 @@ router.post('/', async (req: Request, res: Response) => {
 
   // Session end
   if (!active) {
+    clearWatchdog();
+
     state.sessionActive = false;
     state.currentBpm = null;
     state.activeRuleId = null;
@@ -62,6 +65,10 @@ router.post('/', async (req: Request, res: Response) => {
   state.sessionActive = true;
   state.currentBpm = hr;
   state.lastBpmReceivedAt = new Date();
+
+  // Reset watchdog — if no further BPM arrives within WATCHDOG_TIMEOUT_MS, the
+  // session will be auto-ended (handles watch crash / network drop scenarios)
+  resetWatchdog();
 
   // Evaluate thresholds — updates state.activeRuleId and triggers Spotify if needed
   try {
