@@ -10,6 +10,7 @@
  */
 
 import prisma from '../prisma';
+import { sleep } from '../utils';
 
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
@@ -183,9 +184,7 @@ async function spotifyRequest(
       `Spotify rate limited. Waiting ${retryAfterSeconds}s before retry.`
     );
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, retryAfterSeconds * 1000)
-    );
+    await sleep(retryAfterSeconds * 1000);
 
     // Retry once
     const retryAccessToken = await ensureFreshToken();
