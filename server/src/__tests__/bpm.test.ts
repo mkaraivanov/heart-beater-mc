@@ -33,6 +33,12 @@ vi.mock('../spotify/client', () => ({
   startPlayback: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Mock session watchdog so BPM tests don't leak real timers
+vi.mock('../sessionWatchdog', () => ({
+  resetWatchdog: vi.fn(),
+  clearWatchdog: vi.fn(),
+}));
+
 import bpmRouter from '../routes/bpm';
 import { state } from '../state';
 import prisma from '../prisma';
