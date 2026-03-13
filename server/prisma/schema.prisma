@@ -1,0 +1,28 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model BpmRule {
+  id          String   @id @default(cuid())
+  bpm         Int      @unique
+  spotifyUri  String
+  spotifyType String   // "playlist" | "track" | "album"
+  label       String
+  createdAt   DateTime @default(now())
+}
+
+model OAuthToken {
+  id           String   @id @default(cuid())
+  service      String   @unique // e.g. "spotify"
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+}

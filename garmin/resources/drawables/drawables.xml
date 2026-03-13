@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!--
+  Heart Beater MC — Drawable resources
+
+  LauncherIcon: the 32x32 PNG used as the app icon in the Connect IQ app list.
+  Replace launcher_icon.png with a real icon before publishing to the CIQ store.
+  For sideloading during development, the placeholder below is sufficient.
+-->
+<drawables>
+  <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+</drawables>

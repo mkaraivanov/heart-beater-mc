@@ -1,11 +1,13 @@
-# Heart Beater MC — Connect IQ build configuration
-# Build with: monkeyc -f monkey.jungle -o bin/HeartBeaterApp.prg -d <device-id> -y developer_key.der
+# Heart Beater MC — Connect IQ project file
+#
+# MANUAL BUILD REQUIRED:
+#   Claude Code cannot compile Monkey C. Use the Garmin Connect IQ SDK:
+#     monkeyc -f monkey.jungle -o bin/HeartBeaterApp.prg -d <device-id> -y developer_key.der
+#   Then sideload via Garmin Express or Garmin Connect app.
+#
+# SDK docs: https://developer.garmin.com/connect-iq/reference-guides/monkey-jungle/
 
 project.manifest = manifest.xml
 
 base.sourcePath = source
 base.resourcePath = resources
-
-# Release build optimizations
-release.sourcePath = $(base.sourcePath)
-release.resourcePath = $(base.resourcePath)
