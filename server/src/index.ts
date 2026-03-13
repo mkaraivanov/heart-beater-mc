@@ -12,6 +12,7 @@ import authRouter from './routes/auth';
 import spotifyRouter from './routes/spotify';
 import bpmRouter from './routes/bpm';
 import streamRouter from './routes/stream';
+import { state } from './state';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
@@ -36,6 +37,13 @@ app.use('/auth', authRouter);
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Debug: expose in-memory state (development only)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/state', (_req, res) => {
+    res.json(state);
+  });
+}
 
 // Start server
 app.listen(PORT, () => {

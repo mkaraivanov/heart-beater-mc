@@ -6,10 +6,27 @@
  * State is lost on server restart (known v1 limitation).
  * The watch continues POSTing and the next BPM POST re-establishes the session.
  */
-export const state = {
-  currentBpm: null as number | null,
-  activeRuleId: null as string | null,
+
+export interface AppState {
+  currentBpm: number | null;
+  activeRuleId: string | null;
+  sessionActive: boolean;
+  lastBpmReceivedAt: Date | null;
+  lastSwitchAt: Date | null;
+}
+
+export const state: AppState = {
+  currentBpm: null,
+  activeRuleId: null,
   sessionActive: false,
-  lastBpmReceivedAt: null as Date | null,
-  lastSwitchAt: null as Date | null,
+  lastBpmReceivedAt: null,
+  lastSwitchAt: null,
 };
+
+export function resetState(): void {
+  state.currentBpm = null;
+  state.activeRuleId = null;
+  state.sessionActive = false;
+  state.lastBpmReceivedAt = null;
+  state.lastSwitchAt = null;
+}
