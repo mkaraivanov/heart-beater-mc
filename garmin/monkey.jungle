@@ -2,7 +2,7 @@
 #
 # MANUAL BUILD REQUIRED:
 #   Claude Code cannot compile Monkey C. Use the Garmin Connect IQ SDK:
-#     connectiq build --output dist/HeartBeaterDataField.prg
+#     monkeyc -f monkey.jungle -o bin/HeartBeaterApp.prg -d <device-id> -y developer_key.der
 #   Then sideload via Garmin Express or Garmin Connect app.
 #
 # SDK docs: https://developer.garmin.com/connect-iq/reference-guides/monkey-jungle/
