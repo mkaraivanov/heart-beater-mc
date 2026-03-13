@@ -5,19 +5,16 @@
  *   - Receives { hr: number, active: boolean } from the Garmin watch
  *   - MUST validate X-BPM-Key header against BPM_API_KEY env var
  *   - Updates in-memory state
- *   - Evaluates threshold rules and triggers Spotify if needed
+ *   - Delegates threshold evaluation and Spotify switching to thresholdEngine
  */
 
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { state } from '../state';
 import { broadcast } from '../sse/broadcaster';
-import prisma from '../prisma';
-import { startPlayback } from '../spotify/client';
+import { evaluateThreshold } from '../thresholdEngine';
 
 const router = Router();
-
-const COOLDOWN_MS = 15 * 1000; // 15-second cooldown between Spotify switches
 
 // POST /api/bpm — receive heart rate from Garmin watch
 router.post('/', async (req: Request, res: Response) => {
@@ -66,55 +63,17 @@ router.post('/', async (req: Request, res: Response) => {
   state.currentBpm = hr;
   state.lastBpmReceivedAt = new Date();
 
-  // Threshold engine: find highest rule where rule.bpm <= currentBpm
-  let matchedRule: { id: string; bpm: number; spotifyUri: string; spotifyType: string; label: string } | null = null;
-
+  // Evaluate thresholds — updates state.activeRuleId and triggers Spotify if needed
   try {
-    const rules = await prisma.bpmRule.findMany({
-      where: { bpm: { lte: hr } },
-      orderBy: { bpm: 'desc' },
-      take: 1,
-    });
-
-    matchedRule = rules[0] ?? null;
+    await evaluateThreshold();
   } catch (err) {
-    console.error('Error fetching rules:', err);
-    // Don't fail the request — just skip Spotify switching
-    broadcast('bpm-update', {
-      bpm: hr,
-      activeRuleId: state.activeRuleId,
-      sessionActive: true,
-    });
-    res.json({ ok: true, bpm: hr });
-    return;
-  }
-
-  const newRuleId = matchedRule?.id ?? null;
-  const ruleChanged = newRuleId !== state.activeRuleId;
-
-  // Check cooldown before switching
-  const now = Date.now();
-  const cooldownElapsed =
-    !state.lastSwitchAt ||
-    now - state.lastSwitchAt.getTime() >= COOLDOWN_MS;
-
-  if (ruleChanged && cooldownElapsed) {
-    state.activeRuleId = newRuleId;
-    state.lastSwitchAt = new Date();
-
-    if (matchedRule) {
-      // Trigger Spotify playback asynchronously (don't block the BPM response)
-      startPlayback(matchedRule.spotifyUri, matchedRule.spotifyType).catch(
-        (err) => console.error('Spotify playback error:', err)
-      );
-    }
-    // Below all thresholds (matchedRule === null): do NOT pause Spotify
+    console.error('Error evaluating threshold:', err);
+    // Don't fail the request — BPM state is already updated
   }
 
   broadcast('bpm-update', {
     bpm: hr,
     activeRuleId: state.activeRuleId,
-    activeRuleLabel: matchedRule?.label ?? null,
     sessionActive: true,
   });
 
