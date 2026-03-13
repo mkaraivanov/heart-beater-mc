@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { useServerEvents } from '../hooks/useServerEvents.ts';
-import { getRules } from '../api/client.ts';
+import { getRules, getSpotifyStatus } from '../api/client.ts';
 import type { BpmRule } from '../types.ts';
 
 function bpmColor(bpm: number | null): string {
@@ -30,9 +30,13 @@ function staleness(lastReceived: Date | null): string | null {
 export function Dashboard() {
   const live = useServerEvents();
   const [rules, setRules] = useState<BpmRule[]>([]);
+  const [spotifyConnected, setSpotifyConnected] = useState<boolean | null>(null);
 
   useEffect(() => {
     getRules().then(setRules).catch(console.error);
+    getSpotifyStatus()
+      .then((s) => setSpotifyConnected(s.authenticated))
+      .catch(() => setSpotifyConnected(false));
   }, []);
 
   const activeRule = rules.find((r) => r.id === live.activeRuleId) ?? null;
@@ -82,6 +86,28 @@ export function Dashboard() {
           <p className="text-sm text-orange-800">{staleWarning}</p>
         </div>
       )}
+
+      {/* Spotify status */}
+      {spotifyConnected === false && (
+        <div className="rounded-xl bg-yellow-50 border border-yellow-200 px-4 py-3 flex items-center justify-between">
+          <p className="text-sm text-yellow-800">
+            Spotify is not connected — music switching is paused.
+          </p>
+          <a
+            href="/auth/spotify/login"
+            className="ml-4 shrink-0 rounded-lg bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-900 hover:bg-yellow-200 transition-colors"
+          >
+            Connect Spotify
+          </a>
+        </div>
+      )}
+
+      {/* Informational note */}
+      <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
+        <p className="text-sm text-blue-700">
+          Music switching works even if you close this tab.
+        </p>
+      </div>
 
       {/* BPM display */}
       <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
