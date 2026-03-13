@@ -1,0 +1,11 @@
+# Heart Beater MC — Connect IQ build configuration
+# Build with: monkeyc -f monkey.jungle -o bin/HeartBeaterApp.prg -d <device-id> -y developer_key.der
+
+project.manifest = manifest.xml
+
+base.sourcePath = source
+base.resourcePath = resources
+
+# Release build optimizations
+release.sourcePath = $(base.sourcePath)
+release.resourcePath = $(base.resourcePath)
