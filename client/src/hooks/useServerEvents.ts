@@ -21,6 +21,7 @@ export function useServerEvents(): LiveState {
     activeRuleId: null,
     sessionActive: false,
     lastBpmReceivedAt: null,
+    bpmSource: 'garmin',
   });
 
   const staleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,6 +53,7 @@ export function useServerEvents(): LiveState {
           lastBpmReceivedAt: data.lastBpmReceivedAt
             ? new Date(data.lastBpmReceivedAt)
             : null,
+          bpmSource: data.bpmSource ?? 'garmin',
         });
         resetStaleTimer();
       });
@@ -65,7 +67,14 @@ export function useServerEvents(): LiveState {
           activeRuleId: data.activeRuleId,
           sessionActive: data.sessionActive,
           lastBpmReceivedAt: new Date(),
+          bpmSource: data.bpmSource ?? prev.bpmSource,
         }));
+        resetStaleTimer();
+      });
+
+      es.addEventListener('source-change', (e) => {
+        const data = JSON.parse(e.data) as { bpmSource: 'garmin' | 'ble' };
+        setState((prev) => ({ ...prev, bpmSource: data.bpmSource }));
         resetStaleTimer();
       });
 

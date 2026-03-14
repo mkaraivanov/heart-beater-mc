@@ -12,6 +12,7 @@ import authRouter from './routes/auth';
 import spotifyRouter from './routes/spotify';
 import bpmRouter from './routes/bpm';
 import streamRouter from './routes/stream';
+import bleRouter from './routes/ble';
 import { state } from './state';
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/rules', rulesRouter);
 app.use('/api/spotify', spotifyRouter);
 app.use('/api/bpm', bpmRouter);
 app.use('/api/stream', streamRouter);
+app.use('/api/ble', bleRouter);
 app.use('/auth', authRouter);
 
 // Health check
@@ -49,6 +51,20 @@ if (process.env.NODE_ENV !== 'production') {
 app.listen(PORT, () => {
   console.log(`Heart Beater MC server running on http://localhost:${PORT}`);
   console.log(`Spotify auth: http://localhost:${PORT}/auth/spotify/login`);
+  console.log(`BPM source: ${state.bpmSource}`);
 });
+
+// Wire BLE HR reader when BPM_SOURCE=ble (FR-24–FR-27).
+// Imported dynamically so noble is never loaded in garmin mode — zero behaviour
+// change for existing users who don't set BPM_SOURCE.
+if (process.env['BPM_SOURCE'] === 'ble') {
+  import('./ble/hrReader')
+    .then(({ startBleHrReader }) =>
+      startBleHrReader().catch((err) =>
+        console.error('[ble] BLE HR reader failed to start:', err)
+      )
+    )
+    .catch((err) => console.error('[ble] Failed to load BLE module:', err));
+}
 
 export default app;

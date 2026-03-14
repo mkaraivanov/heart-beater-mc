@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { useServerEvents } from '../hooks/useServerEvents.ts';
-import { getRules, getSpotifyStatus } from '../api/client.ts';
+import { getRules, getSpotifyStatus, startBle, stopBle } from '../api/client.ts';
 import type { BpmRule } from '../types.ts';
 
 function bpmColor(bpm: number | null): string {
@@ -39,6 +39,23 @@ export function Dashboard() {
       .catch(() => setSpotifyConnected(false));
   }, []);
 
+  const [bleToggling, setBleToggling] = useState(false);
+
+  async function handleBleToggle() {
+    setBleToggling(true);
+    try {
+      if (live.bpmSource === 'ble') {
+        await stopBle();
+      } else {
+        await startBle();
+      }
+    } catch (err) {
+      console.error('BLE toggle failed:', err);
+    } finally {
+      setBleToggling(false);
+    }
+  }
+
   const activeRule = rules.find((r) => r.id === live.activeRuleId) ?? null;
   const staleWarning = staleness(live.lastBpmReceivedAt);
 
@@ -64,7 +81,7 @@ export function Dashboard() {
           }`}
         />
         <p
-          className={`text-sm font-medium ${
+          className={`text-sm font-medium flex-1 ${
             live.connected
               ? live.sessionActive
                 ? 'text-green-800'
@@ -78,6 +95,19 @@ export function Dashboard() {
             ? 'Workout active — receiving heart rate'
             : 'Connected — no active session'}
         </p>
+        {/* BPM source toggle (FR-28) */}
+        <button
+          onClick={handleBleToggle}
+          disabled={bleToggling}
+          title={live.bpmSource === 'ble' ? 'Switch to Garmin CIQ' : 'Switch to BLE Direct'}
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium transition-colors disabled:opacity-50 ${
+            live.bpmSource === 'ble'
+              ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {bleToggling ? '…' : live.bpmSource === 'ble' ? 'BLE Direct' : 'Garmin CIQ'}
+        </button>
       </div>
 
       {/* Stale data warning */}

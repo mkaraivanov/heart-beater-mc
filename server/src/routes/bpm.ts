@@ -4,22 +4,25 @@
  * POST /api/bpm
  *   - Receives { hr: number, active: boolean } from the Garmin watch
  *   - MUST validate X-BPM-Key header against BPM_API_KEY env var
- *   - Updates in-memory state
- *   - Delegates threshold evaluation and Spotify switching to thresholdEngine
+ *   - Delegates all state/threshold/SSE work to processBpm()
+ *
+ * This handler is intentionally a thin wrapper. The core logic lives in
+ * src/bpm/processor.ts so it can be shared with the BLE reader (FR-24–FR-27).
+ *
+ * The X-BPM-Key check stays here — BLE mode bypasses HTTP entirely and runs
+ * inside the trusted server process, so it needs no equivalent.
  */
 
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { state } from '../state';
-import { broadcast } from '../sse/broadcaster';
-import { evaluateThreshold } from '../thresholdEngine';
-import { resetWatchdog, clearWatchdog } from '../sessionWatchdog';
+import { processBpm } from '../bpm/processor';
 
 const router = Router();
 
 // POST /api/bpm — receive heart rate from Garmin watch
 router.post('/', async (req: Request, res: Response) => {
-  // Validate X-BPM-Key header
+  // Validate X-BPM-Key header (non-removable per architectural constraint)
   const bpmKey = req.headers['x-bpm-key'];
   const expectedKey = process.env.BPM_API_KEY;
 
@@ -41,16 +44,9 @@ router.post('/', async (req: Request, res: Response) => {
     return;
   }
 
-  // Session end
+  // Session end — hr is not required when active is false
   if (!active) {
-    clearWatchdog();
-
-    state.sessionActive = false;
-    state.currentBpm = null;
-    state.activeRuleId = null;
-    state.lastBpmReceivedAt = new Date();
-
-    broadcast('session-end', { active: false });
+    await processBpm(0, false);
     res.json({ ok: true, message: 'Session ended' });
     return;
   }
@@ -61,28 +57,7 @@ router.post('/', async (req: Request, res: Response) => {
     return;
   }
 
-  // Update state
-  state.sessionActive = true;
-  state.currentBpm = hr;
-  state.lastBpmReceivedAt = new Date();
-
-  // Reset watchdog — if no further BPM arrives within WATCHDOG_TIMEOUT_MS, the
-  // session will be auto-ended (handles watch crash / network drop scenarios)
-  resetWatchdog();
-
-  // Evaluate thresholds — updates state.activeRuleId and triggers Spotify if needed
-  try {
-    await evaluateThreshold();
-  } catch (err) {
-    console.error('Error evaluating threshold:', err);
-    // Don't fail the request — BPM state is already updated
-  }
-
-  broadcast('bpm-update', {
-    bpm: hr,
-    activeRuleId: state.activeRuleId,
-    sessionActive: true,
-  });
+  await processBpm(hr, true);
 
   res.json({ ok: true, bpm: hr, activeRuleId: state.activeRuleId });
 });
