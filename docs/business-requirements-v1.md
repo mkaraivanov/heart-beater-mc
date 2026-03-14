@@ -130,6 +130,24 @@ The Garmin watch runs a small Connect IQ app (written in Monkey C) that reads li
 
 ---
 
+### 4.8 BLE Direct Heart Rate Input (BRD Addendum)
+
+| ID | Requirement |
+|---|---|
+| FR-24 | The server shall be capable of reading heart rate directly from a BLE HR monitor on the host machine, using the standard BLE Heart Rate Service (UUID 0x180D), as an alternative to the Garmin Connect IQ HTTP POST path. |
+| FR-25 | BLE HR readings shall be fed into the existing threshold engine at a 1–5 second cadence (matching the rate at which the BLE HR characteristic emits notifications). The threshold evaluation, Spotify switching, and cooldown logic are unchanged. |
+| FR-26 | The active BPM input mode shall be selected via `BPM_SOURCE` in `.env`: `garmin` (default — uses CIQ HTTP POST) or `ble` (direct BLE). Setting `BPM_SOURCE=garmin` or omitting it shall produce zero behaviour change for existing users. |
+| FR-27 | In BLE mode, the server shall auto-connect to the first discovered HR device. If `BLE_DEVICE_ADDRESS` is set in `.env`, the server shall connect only to that specific device and skip all others. |
+| FR-28 | The live dashboard shall display a source badge indicating whether the active BPM input is `Garmin CIQ` or `BLE Direct`. The badge shall be visible alongside the session status indicator at all times. |
+
+> **Rationale:** This supports indoor cycling use cases (e.g. Zwift) where the user already has a chest strap or wrist HR monitor connected to the platform and does not need a full Garmin activity running. BLE mode bypasses the Garmin watch app and ngrok tunnel entirely, simplifying the setup for stationary sessions.
+
+> **Session lifecycle (BLE mode):** BLE mode has no explicit session-end signal. If no HR notification is received for more than `BLE_INACTIVITY_TIMEOUT_MS` (default 30 seconds), the server auto-ends the session, clearing `sessionActive` and broadcasting `session-end` via SSE.
+
+> **OS requirements:** On Linux, run `sudo setcap cap_net_raw+eip $(readlink -f $(which node))` once. On macOS, grant Bluetooth permission to Terminal/Node when prompted. On Windows, WSL2 may be required. ANT+ is out of scope — BLE only.
+
+---
+
 ## 5. Non-Functional Requirements
 
 | ID | Requirement |

@@ -11,11 +11,15 @@ export interface BpmRule {
   createdAt: string;
 }
 
+/** Active BPM input source label (FR-28). */
+export type BpmSource = 'garmin' | 'ble';
+
 /** Payload sent by the SSE broadcaster on bpm-update events. */
 export interface BpmUpdateEvent {
   bpm: number;
   activeRuleId: string | null;
   sessionActive: boolean;
+  bpmSource: BpmSource;
 }
 
 /** Payload sent by the SSE broadcaster on the initial connected event. */
@@ -24,6 +28,7 @@ export interface ConnectedEvent {
   activeRuleId: string | null;
   sessionActive: boolean;
   lastBpmReceivedAt: string | null;
+  bpmSource: BpmSource;
 }
 
 /** Live state derived from SSE events. */
@@ -33,6 +38,7 @@ export interface LiveState {
   activeRuleId: string | null;
   sessionActive: boolean;
   lastBpmReceivedAt: Date | null;
+  bpmSource: BpmSource;
 }
 
 export interface SpotifySearchResult {

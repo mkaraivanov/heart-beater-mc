@@ -35,6 +35,7 @@ router.get('/', (req: Request, res: Response) => {
     activeRuleId: state.activeRuleId,
     sessionActive: state.sessionActive,
     lastBpmReceivedAt: state.lastBpmReceivedAt?.toISOString() ?? null,
+    bpmSource: state.bpmSource,
   })}\n\n`;
   res.write(initialEvent);
 

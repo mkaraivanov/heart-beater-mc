@@ -62,6 +62,16 @@ export async function deleteRule(id: string): Promise<void> {
   return request<void>(`/rules/${id}`, { method: 'DELETE' });
 }
 
+// ── BLE ──────────────────────────────────────────────────────────────────────
+
+export async function startBle(): Promise<{ ok: boolean; bpmSource: string }> {
+  return request('/ble/start', { method: 'POST' });
+}
+
+export async function stopBle(): Promise<{ ok: boolean; bpmSource: string }> {
+  return request('/ble/stop', { method: 'POST' });
+}
+
 // ── Spotify ──────────────────────────────────────────────────────────────────
 
 export async function getSpotifyStatus(): Promise<{
